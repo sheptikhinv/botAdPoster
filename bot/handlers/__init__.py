@@ -1,0 +1,4 @@
+from .service import register_service_handlers
+from .admin_messages import register_admin_messages_handlers
+from .user import register_user_handlers
+from .admin_callback import register_admin_callback_handlers
