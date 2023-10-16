@@ -85,7 +85,7 @@ def get_chat_button(chat_invite: str):
 
 def get_skip_photo_button():
     skip_button = InlineKeyboardButton(
-        text="Не добавлять фото",
+        text="Отправить без фото",
         callback_data="skip photo"
     )
     return InlineKeyboardMarkup(inline_keyboard=[[skip_button]])
