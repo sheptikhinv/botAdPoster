@@ -33,7 +33,7 @@ async def start_message(message: Message, command: CommandObject, state: FSMCont
         user = User(message.from_user.id, message.from_user.first_name, message.from_user.username, "user")
         user.add_to_database()
     if command.args is None:
-        await message.answer("Привет! Если хочешь создать объявление - пиши /create")
+        await message.answer("Привет! Если хотите создать объявление - пишите /create")
     else:
         await start_new_ad(message, state)
 
@@ -46,7 +46,7 @@ async def start_new_ad(message: Message, state: FSMContext):
             await message.bot.export_chat_invite_link(get_main_chat_id())))
         return
     await message.answer(
-        text="Выбери категорию для своего объявления!",
+        text="Выберите категорию для своего объявления!",
         reply_markup=get_all_topics_markup())
     await state.set_state(AddingAd.setting_topic)
 
@@ -56,15 +56,15 @@ async def setting_topic(callback_query: CallbackQuery, state: FSMContext):  # с
     await state.update_data(ad_topic=callback_query.data.split()[2])  # впихнуть для наглядности создания объекта
     await callback_query.message.edit_text(text=callback_query.message.text, reply_markup=None)
     await state.set_state(AddingAd.entering_title)
-    await callback_query.message.answer("Теперь введи название для своего объявления")
+    await callback_query.message.answer("Теперь введите название для вашего объявления")
     await callback_query.answer()
 
 
 @router.message(AddingAd.entering_title, F.text, F.chat.type == "private")
 async def setting_title(message: Message, state: FSMContext):
     await state.update_data(ad_title=message.text)
-    await message.answer("Отлично, теперь отправь полное описание своего товара.\n\n"
-                         "Не забудь указать свои контакты для связи!")
+    await message.answer("Отлично, теперь отправьте полное описание вашего товара.\n\n"
+                         "Не забудьте указать свои контакты для связи!")
     await state.set_state(AddingAd.entering_description)
 
 
@@ -72,8 +72,8 @@ async def setting_title(message: Message, state: FSMContext):
 async def setting_description(message: Message, state: FSMContext):
     await state.update_data(ad_description=message.text)
     await message.answer(
-        text="Описание добавлено! Если хочешь добавить фотографию, отправь её сейчас (максимум одну!)\n"
-             "Если хочешь создать объявление без фотографии, просто отправь любое сообщение",
+        text="Описание добавлено! Если хотите добавить фотографию, отправьте её сейчас (максимум одну!)\n"
+             'Если хотите создать объявление без фотографии, нажмите кнопку "Отправить без фото"',
         reply_markup=get_skip_photo_button())
     await state.set_state(AddingAd.adding_photo)
 
@@ -81,7 +81,7 @@ async def setting_description(message: Message, state: FSMContext):
 @router.message(AddingAd.adding_photo, F.photo, F.chat.type == "private")
 async def setting_photo(message: Message, state: FSMContext):
     await state.update_data(ad_photo=message.photo[-1].file_id)
-    await message.answer("Объявление готово! Проверь всё в следующем сообщении и сможешь отправить его на проверку!")
+    await message.answer("Объявление готово! Проверьте всё в следующем сообщении и сможете отправить его на проверку!")
     await preview_ad(message, state)
 
 
@@ -89,7 +89,7 @@ async def setting_photo(message: Message, state: FSMContext):
 async def not_setting_photo(callback_query: CallbackQuery, state: FSMContext):
     await state.update_data(ad_photo=None)
     await callback_query.message.edit_reply_markup(reply_markup=None)
-    await callback_query.message.answer("Объявление готово! Проверь всё в следующем сообщении и сможешь отправить его на проверку!")
+    await callback_query.message.answer("Объявление готово! Проверьте всё в следующем сообщении и сможете отправить его на проверку!")
     await preview_ad(callback_query.message, state)
 
 
