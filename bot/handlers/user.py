@@ -1,12 +1,14 @@
 import asyncio
 
+import aiogram.exceptions
 from aiogram import Router, F, Dispatcher
 from aiogram.filters import Command, CommandObject, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from bot.filters.blocked import IsBlocked
-from bot.keyboards import get_all_topics_markup, get_ad_user_buttons, get_ad_admin_buttons, get_chat_button
+from bot.keyboards import get_all_topics_markup, get_ad_user_buttons, get_ad_admin_buttons, get_chat_button, \
+    get_skip_photo_button
 from bot.misc import user_ad_preview, id_generator, admin_ad_preview, send_ad_to_admins
 from bot.states import AddingAd
 from config import get_main_chat_id
@@ -69,8 +71,10 @@ async def setting_title(message: Message, state: FSMContext):
 @router.message(AddingAd.entering_description, F.text, F.chat.type == "private")
 async def setting_description(message: Message, state: FSMContext):
     await state.update_data(ad_description=message.text)
-    await message.answer("Описание добавлено! Если хочешь добавить фотографию, отправь её сейчас (максимум одну!)\n"
-                         "Если хочешь создать объявление без фотографии, просто отправь любое сообщение")
+    await message.answer(
+        text="Описание добавлено! Если хочешь добавить фотографию, отправь её сейчас (максимум одну!)\n"
+             "Если хочешь создать объявление без фотографии, просто отправь любое сообщение",
+        reply_markup=get_skip_photo_button())
     await state.set_state(AddingAd.adding_photo)
 
 
@@ -81,11 +85,12 @@ async def setting_photo(message: Message, state: FSMContext):
     await preview_ad(message, state)
 
 
-@router.message(AddingAd.adding_photo, F.text, F.chat.type == "private")
-async def not_setting_photo(message: Message, state: FSMContext):
+@router.callback_query(AddingAd.adding_photo, F.data.contains("skip"))
+async def not_setting_photo(callback_query: CallbackQuery, state: FSMContext):
     await state.update_data(ad_photo=None)
-    await message.answer("Объявление готово! Проверь всё в следующем сообщении и сможешь отправить его на проверку!")
-    await preview_ad(message, state)
+    await callback_query.message.edit_reply_markup(reply_markup=None)
+    await callback_query.message.answer("Объявление готово! Проверь всё в следующем сообщении и сможешь отправить его на проверку!")
+    await preview_ad(callback_query.message, state)
 
 
 async def preview_ad(message: Message, state: FSMContext):
@@ -104,10 +109,14 @@ async def preview_ad(message: Message, state: FSMContext):
     reply_markup = get_ad_user_buttons(ad_id)
     ad.add_to_database()
     await state.clear()
-    if ad.photo_id is not None:
-        await message.answer_photo(caption=text, photo=ad.photo_id, reply_markup=reply_markup)
-    else:
-        await message.answer(text=text, reply_markup=reply_markup)
+    try:
+        if ad.photo_id is not None:
+            await message.answer_photo(caption=text, photo=ad.photo_id, reply_markup=reply_markup)
+        else:
+            await message.answer(text=text, reply_markup=reply_markup)
+    except aiogram.exceptions.TelegramBadRequest as error:
+        if error.message == "Bad Request: message is too long" or error.message == "Bad Request: message caption is too long":
+            await message.answer("Ваше объявление слишком длинное. Сократите описание и попробуйте снова.")
 
 
 @router.callback_query(F.data.contains("moderate"))
@@ -115,9 +124,14 @@ async def send_ad_to_moderation(callback_query: CallbackQuery):
     args = callback_query.data.split()
     ad = Ad.get_ad_by_id(args[2])
     ad.change_status("checking")
-    await callback_query.message.answer("Ваше объявление отправлено на проверку!")
     await callback_query.message.edit_reply_markup(reply_markup=None)
-    await send_ad_to_admins(ad, callback_query)
+    try:
+        await send_ad_to_admins(ad, callback_query)
+        await callback_query.message.answer("Ваше объявление отправлено на проверку!")
+    except aiogram.exceptions.TelegramBadRequest as error:
+        if error.message == "Bad Request: message is too long" or error.message == "Bad Request: message caption is too long":
+            await callback_query.message.answer("Ваше объявление слишком длинное. Сократите описание и попробуйте снова.")
+
 
 
 @router.callback_query(F.data.contains("cancel"))

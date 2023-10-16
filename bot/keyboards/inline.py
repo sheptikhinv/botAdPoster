@@ -77,7 +77,15 @@ def get_start_button(username):
 
 def get_chat_button(chat_invite: str):
     chat_button = InlineKeyboardButton(
-        text="Приосединиться к чату",
+        text="Присоединиться к чату",
         url=chat_invite
     )
     return InlineKeyboardMarkup(inline_keyboard=[[chat_button]])
+
+
+def get_skip_photo_button():
+    skip_button = InlineKeyboardButton(
+        text="Не добавлять фото",
+        callback_data="skip photo"
+    )
+    return InlineKeyboardMarkup(inline_keyboard=[[skip_button]])
