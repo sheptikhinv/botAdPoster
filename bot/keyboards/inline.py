@@ -89,3 +89,15 @@ def get_skip_photo_button():
         callback_data="skip photo"
     )
     return InlineKeyboardMarkup(inline_keyboard=[[skip_button]])
+
+
+def get_blocked_users_buttons():
+    buttons = []
+    users = User.get_all_blocked_ids()
+    for user_id in users:
+        user = User.get_from_database_by_id(user_id)
+        buttons.append([InlineKeyboardButton(
+            text=f"{user.first_name} - @{user.username}",
+            callback_data=f"user unblock {user.user_id}"
+        )])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

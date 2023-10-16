@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.filters import DoesAdminExist, IsAdmin
-from bot.keyboards import get_all_admins_markup
+from bot.keyboards import get_all_admins_markup, get_blocked_users_buttons
 from bot.states import AdDecline
 from config import get_main_chat_id
 from database import User, Topic, Ad
@@ -32,11 +32,20 @@ async def add_moderator(message: Message, command: CommandObject):
             try:
                 user.set_role("moderator")
                 await message.answer(f"Пользователь {user.first_name} сделан администратором!")
-                await message.bot.send_message(user.user_id, f"{message.from_user.username} сделал вас администратором!")
+                await message.bot.send_message(user.user_id,
+                                               f"{message.from_user.username} сделал вас администратором!")
             except Exception as error:
                 await message.answer(f"Неожиданная ошибка!\n{error}")
         else:
             await message.answer("Данного пользователя нет в базе данных!")
+
+
+@router.message(IsAdmin(), Command("blocked"), F.chat.type == "private")
+async def get_blocked_users(message: Message):
+    reply_markup = get_blocked_users_buttons()
+    await message.answer(
+        text="Вот список заблокированных пользователей\nДля разблокировки нажмите на кнопку пользователя",
+        reply_markup=reply_markup)
 
 
 @router.message(IsAdmin(), Command("admins"), F.chat.type == "private")
@@ -64,7 +73,8 @@ async def send_decline_reason(message: Message, state: FSMContext):
     ad_id = (await state.get_data())["ad_id"]
     ad = Ad.get_ad_by_id(ad_id)
     await message.answer("Уведомление отправлено пользователю")
-    await message.bot.send_message(chat_id=ad.created_by, text=f"Ваше объявление {ad.title} отклонено по причине:\n{message.text}")
+    await message.bot.send_message(chat_id=ad.created_by,
+                                   text=f"Ваше объявление {ad.title} отклонено по причине:\n{message.text}")
     await state.clear()
 
 

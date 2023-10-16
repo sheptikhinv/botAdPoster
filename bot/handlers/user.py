@@ -82,7 +82,7 @@ async def setting_description(message: Message, state: FSMContext):
 async def setting_photo(message: Message, state: FSMContext):
     await state.update_data(ad_photo=message.photo[-1].file_id)
     await message.answer("Объявление готово! Проверьте всё в следующем сообщении и сможете отправить его на проверку!")
-    await preview_ad(message, state)
+    await preview_ad(message, state, message.from_user.id)
 
 
 @router.callback_query(AddingAd.adding_photo, F.data.contains("skip"))
@@ -90,10 +90,10 @@ async def not_setting_photo(callback_query: CallbackQuery, state: FSMContext):
     await state.update_data(ad_photo=None)
     await callback_query.message.edit_reply_markup(reply_markup=None)
     await callback_query.message.answer("Объявление готово! Проверьте всё в следующем сообщении и сможете отправить его на проверку!")
-    await preview_ad(callback_query.message, state)
+    await preview_ad(callback_query.message, state, callback_query.from_user.id)
 
 
-async def preview_ad(message: Message, state: FSMContext):
+async def preview_ad(message: Message, state: FSMContext, user_id: int):
     ad_data = await state.get_data()
     ad_id = id_generator()
     text = user_ad_preview(ad_data["ad_title"], ad_data["ad_description"])
@@ -101,7 +101,7 @@ async def preview_ad(message: Message, state: FSMContext):
         title=ad_data["ad_title"],
         description=ad_data["ad_description"],
         photo_id=ad_data["ad_photo"],
-        created_by=message.from_user.id,
+        created_by=user_id,
         topic_id=ad_data["ad_topic"],
         ad_id=ad_id,
         status="checking"

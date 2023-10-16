@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from bot.filters import IsAdmin
-from bot.keyboards import get_admin_markup, get_start_button
+from bot.keyboards import get_admin_markup, get_start_button, get_blocked_users_buttons
 from bot.misc import user_ad_preview
 from bot.states import AdDecline
 from config import get_main_chat_id
@@ -94,9 +94,21 @@ async def decline_ad(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
 
 
+@router.callback_query(IsAdmin(), F.data.contains("unblock"))
+async def unblock_user(callback_query: CallbackQuery):
+    args = callback_query.data.split()
+    user = User.get_from_database_by_id(int(args[2]))
+    if user.role == "blocked":
+        user.set_role("user")
+        await callback_query.message.answer("Пользователь разблокирован")
+        await callback_query.message.edit_reply_markup(reply_markup=get_blocked_users_buttons())
+    await callback_query.answer()
+
+
 @router.callback_query(IsAdmin(), F.data.contains("block"))
 async def block_user(callback_query: CallbackQuery):
     args = callback_query.data.split()
+    print(args[2])
     user = User.get_from_database_by_id(int(args[2]))
     ad = Ad.get_ad_by_id(args[3])
     if ad.status == "checking":
