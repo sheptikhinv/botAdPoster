@@ -100,7 +100,7 @@ async def unblock_user(callback_query: CallbackQuery):
     user = User.get_from_database_by_id(int(args[2]))
     if user.role == "blocked":
         user.set_role("user")
-        await callback_query.message.answer("Пользователь разблокирован")
+        await callback_query.message.answer(f"Пользователь {user.first_name} - @{user.username} разблокирован")
         await callback_query.message.edit_reply_markup(reply_markup=get_blocked_users_buttons())
     await callback_query.answer()
 
@@ -108,13 +108,12 @@ async def unblock_user(callback_query: CallbackQuery):
 @router.callback_query(IsAdmin(), F.data.contains("block"))
 async def block_user(callback_query: CallbackQuery):
     args = callback_query.data.split()
-    print(args[2])
     user = User.get_from_database_by_id(int(args[2]))
     ad = Ad.get_ad_by_id(args[3])
     if ad.status == "checking":
         user.set_role("blocked")
         ad.change_status("declined")
-        await callback_query.message.answer("Пользователь заблокирован")
+        await callback_query.message.answer(f"Пользователь {user.first_name} - @{user.username} заблокирован")
     else:
         await callback_query.message.answer("Объявление уже было рассмотрено другим админом")
     await callback_query.message.edit_reply_markup(reply_markup=None)

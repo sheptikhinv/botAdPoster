@@ -9,7 +9,7 @@ from aiogram.types import Message, CallbackQuery
 from bot.filters.blocked import IsBlocked
 from bot.keyboards import get_all_topics_markup, get_ad_user_buttons, get_ad_admin_buttons, get_chat_button, \
     get_skip_photo_button
-from bot.misc import user_ad_preview, id_generator, admin_ad_preview, send_ad_to_admins
+from bot.misc import user_ad_preview, id_generator, send_ad_to_admins
 from bot.states import AddingAd
 from config import get_main_chat_id
 from database import User, Ad

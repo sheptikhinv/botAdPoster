@@ -8,7 +8,8 @@ from database import Ad, User
 
 
 async def send_ad_to_admins(ad: Ad, callback_query: CallbackQuery):
-    text = admin_ad_preview(ad)
+    user = User.get_from_database_by_id(ad.created_by)
+    text = admin_ad_preview(ad, user)
     reply_markup = get_ad_admin_buttons(ad)
     for user_id in User.get_all_admins_ids():
         if ad.photo_id is not None:
